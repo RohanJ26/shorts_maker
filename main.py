@@ -87,7 +87,7 @@ def main():
     print("\n" + "=" * 60)
     print("STEP 4: Final Assembly")
     print("=" * 60)
-    music_path = processor.select_music(dominant_emotion, INPUT_MUSIC_DIR)
+    music_path = processor.select_music(dominant_emotion, INPUT_MUSIC_DIR, analyzer)
     final_video = processor.assemble_video(music_path)
     
     # Step 5: Export
