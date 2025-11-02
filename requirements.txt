@@ -6,3 +6,6 @@ opencv-python==4.8.1.78
 scipy==1.11.4
 Pillow==10.1.0
 numpy==1.24.3
+fer==22.5.1
+mtcnn==0.1.1
+tensorflow==2.14.0  # Required for fer and mtcnn

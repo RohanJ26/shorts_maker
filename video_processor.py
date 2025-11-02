@@ -3,6 +3,8 @@ Main video processing and assembly module
 """
 
 import os
+import glob
+import random
 from moviepy.editor import (VideoFileClip, AudioFileClip, concatenate_videoclips,
                             vfx, afx)
 from config import (CLIP_DURATION, TRANSITION_DURATION, TARGET_HEIGHT, 
@@ -124,35 +126,48 @@ class VideoProcessor:
             print(f"\n⛔ Error during export: {e}")
             return False
     
-    def select_music(self, emotion, music_dir):
+    def select_music(self, emotion, music_dir, analyzer=None):
         """
         Select appropriate music file based on detected emotion
         
         Args:
             emotion: Detected emotion string
             music_dir: Directory containing music files
+            analyzer: Optional EmotionAnalyzer instance for smart music selection
             
         Returns:
             Path to selected music file or None
         """
-        music_filename = MUSIC_LIBRARY.get(emotion)
-        
-        if music_filename:
-            music_path = os.path.join(music_dir, music_filename)
-            if os.path.exists(music_path):
-                print(f"Selected music: '{music_filename}' (emotion: {emotion})")
-                return music_path
-            else:
-                print(f"⚠️ Music file '{music_filename}' not found.")
-        
-        # Fallback: use any available music file
+        # First check for user-provided music in input_music directory
         if os.path.exists(music_dir):
             music_files = [f for f in os.listdir(music_dir) 
                           if f.endswith(('.mp3', '.wav', '.m4a'))]
             if music_files:
                 fallback_path = os.path.join(music_dir, music_files[0])
-                print(f"Using fallback music: '{music_files[0]}'")
+                print(f"Using user-provided music: '{music_files[0]}'")
                 return fallback_path
-        
-        print("⚠️ No music files available.")
+
+        # If no user music, use emotion-based selection from default_music
+        default_music_dir = os.path.join(os.path.dirname(music_dir), 'input_music', 'default_music', emotion)
+        if os.path.exists(default_music_dir):
+            default_files = []
+            default_files.extend(glob.glob(os.path.join(default_music_dir, '*.mp3')))
+            default_files.extend(glob.glob(os.path.join(default_music_dir, '*.wav')))
+            if default_files:
+                chosen_music = random.choice(default_files)
+                print(f"Selected default music for emotion '{emotion}': '{os.path.basename(chosen_music)}'")
+                return chosen_music
+                
+        # Try neutral emotion as fallback
+        neutral_dir = os.path.join(os.path.dirname(music_dir), 'input_music', 'default_music', 'neutral')
+        if os.path.exists(neutral_dir):
+            neutral_files = []
+            neutral_files.extend(glob.glob(os.path.join(neutral_dir, '*.mp3')))
+            neutral_files.extend(glob.glob(os.path.join(neutral_dir, '*.wav')))
+            if neutral_files:
+                chosen_music = random.choice(neutral_files)
+                print(f"Using neutral fallback music: '{os.path.basename(chosen_music)}'")
+                return chosen_music
+
+        print("⚠️ No music files available in default or custom directories.")
         return None
