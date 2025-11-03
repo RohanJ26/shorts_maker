@@ -18,26 +18,31 @@ class VideoProcessor:
         self.video_filter = video_filter
         self.processed_clips = []
     
-    def process_single_clip(self, video_path, clip_duration=None, target_height=None):
+    def process_single_clip(self, video_path, start_time=None, end_time=None, target_height=None):
         """
         Process a single video clip with filters and effects
         
         Args:
             video_path: Path to input video
-            clip_duration: Duration to trim clip to (None = use config)
+            start_time: Start time for the segment (None = start)
+            end_time: End time for the segment (None = end)
             target_height: Target height for resizing (None = use config)
             
         Returns:
             Processed VideoFileClip
         """
-        clip_duration = clip_duration or CLIP_DURATION
         target_height = target_height or TARGET_HEIGHT
-        
         clip = VideoFileClip(video_path)
         
-        # 1. Trim to desired duration
-        start_time = max(0, (clip.duration / 2) - (clip_duration / 2))
-        clip = clip.subclip(start_time, start_time + clip_duration)
+        # 1. Extract segment if specified
+        if start_time is not None:
+            if end_time is None:
+                end_time = start_time + CLIP_DURATION
+            clip = clip.subclip(start_time, end_time)
+        else:
+            # Use middle portion for full clips
+            start_time = max(0, (clip.duration / 2) - (CLIP_DURATION / 2))
+            clip = clip.subclip(start_time, start_time + CLIP_DURATION)
         
         # 2. Resize to standard height
         clip = clip.resize(height=target_height)
@@ -52,21 +57,21 @@ class VideoProcessor:
         
         return clip
     
-    def process_all_clips(self, video_paths):
+    def process_segments(self, video_segments):
         """
-        Process all video clips
+        Process video segments with filters and effects
         
         Args:
-            video_paths: List of paths to video files
+            video_segments: List of tuples (video_path, start_time, end_time)
         """
-        print("\nProcessing video clips...")
+        print("\nProcessing video segments...")
         self.processed_clips = []
         
-        for path in video_paths:
-            clip = self.process_single_clip(path)
+        for video_path, start_time, end_time in video_segments:
+            clip = self.process_single_clip(video_path, start_time, end_time)
             self.processed_clips.append(clip)
         
-        print("✅ All clips processed.")
+        print("✅ All segments processed.")
     
     def assemble_video(self, music_path=None):
         """

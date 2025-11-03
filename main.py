@@ -70,18 +70,42 @@ def main():
     analyzer = EmotionAnalyzer()
     dominant_emotion, all_emotions = analyzer.analyze_clips(video_paths)
     
-    # Step 2: Setup video filter
+    # Step 2: Analyze and sequence important parts
     print("\n" + "=" * 60)
-    print("STEP 2: Setup Video Filters")
+    print("STEP 2: Smart Video Sequencing")
+    print("=" * 60)
+    from video_sequencer import VideoSequencer
+    sequencer = VideoSequencer(min_segment_duration=2.0, 
+                             max_segment_duration=10.0,
+                             importance_threshold=0.7)
+                             
+    # Analyze each video for important segments
+    for video_path in video_paths:
+        sequencer.analyze_video(video_path)
+        
+    # Get optimized sequence
+    sequence = sequencer.get_optimal_sequence()
+    if not sequence:
+        print("⚠️ No important segments found, using full clips.")
+        video_segments = [(path, 0, None) for path in video_paths]
+    else:
+        print("\n✅ Optimal sequence generated:")
+        for i, (path, start, end) in enumerate(sequence):
+            print(f"  {i+1}. {os.path.basename(path)} [{start:.1f}s - {end:.1f}s]")
+        video_segments = sequence
+    
+    # Step 3: Setup video filter
+    print("\n" + "=" * 60)
+    print("STEP 3: Setup Video Filters")
     print("=" * 60)
     video_filter = VideoFilter(use_style_transfer=USE_STYLE_TRANSFER, device=device)
     
-    # Step 3: Process videos
+    # Step 4: Process videos
     print("\n" + "=" * 60)
-    print("STEP 3: Video Processing")
+    print("STEP 4: Video Processing")
     print("=" * 60)
     processor = VideoProcessor(video_filter)
-    processor.process_all_clips(video_paths)
+    processor.process_segments(video_segments)
     
     # Step 4: Select music and assemble
     print("\n" + "=" * 60)
